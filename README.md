@@ -37,6 +37,13 @@ ground-truth           |  predictions
 ![original image](results/gt_image.png) |  ![predicted image](results/pred_image.png)
 
 
+## Training
+
+Run a mask rcnn on PASCAL 2012 with the following command:
+
+```
+python train.py
+```
 
 ## Citation 
 If you find the code useful for your research, please cite:
