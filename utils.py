@@ -12,6 +12,7 @@ import pylab as plt
 import pycocotools.mask as mask_utils
 from matplotlib.patches import Polygon
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import ann_utils as au
 
 
 def f2l(X):
@@ -359,3 +360,8 @@ def bgrNormalize():
          BGR_Transform(),
          normalize_transform])
 
+def load_txt(fname):
+    # READS LINES
+    with open(fname, "r") as f:
+        lines = f.readlines()
+    return lines

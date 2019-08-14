@@ -25,7 +25,6 @@ import utils as ut
 class MRCNN(nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
-        self.option_dict = exp_dict["option"]
         cfg_base_path = "./models/configs/"
 
         self.n_classes = 21
@@ -51,10 +50,11 @@ class MRCNN(nn.Module):
         #--------
         # Opt stage
         self.cfg.SOLVER.BASE_LR = ((0.0025 * 8) /
-                     (16 / float(exp_dict["option"]["batch_size"])))
+                     (16 / float(exp_dict["batch_size"])))
 
         optimizer = make_optimizer(self.cfg, self)
         scheduler = make_lr_scheduler(self.cfg, optimizer)
+
         self.opt = optimizer
         self.scheduler = scheduler
 
@@ -137,25 +137,12 @@ class MRCNN(nn.Module):
         _, _, H, W = map(int, batch["meta"]["shape"])
 
         if method == "annList":
-            maskVoid_flag = True
-            if self.option_dict.get("apply_void") == "True":
-                maskVoid = batch["maskVoid"][0]
-            else:
-                maskVoid = None
+            maskVoid = batch["maskVoid"][0]
+
             annList = au.targets2annList(
                 preds, shape=(H, W), image_id=image_id,
                 maskVoid=maskVoid)
 
-        if method == "annList_noVoid":
-            maskVoid_flag = False
-            annList = au.targets2annList(
-                preds, shape=(H, W), image_id=image_id,
-                maskVoid=None)
-
-        if self.option_dict.get("refine") == "bo":            
-            annList = au.annList2BestDice(annList, batch, 
-                    maskVoid_flag=maskVoid_flag)["annList"]
-            
         return annList
 
     @torch.no_grad()

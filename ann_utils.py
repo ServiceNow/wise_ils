@@ -7,7 +7,7 @@ from skimage import measure
 import utils as ut
 import numpy as np
 from skimage.transform import resize
-
+from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
 from torch.nn.functional import interpolate
 import pycocotools.mask as mask_utils
 import torch
@@ -59,63 +59,6 @@ def annList2BestDice(annList, batch, maskVoid_flag=True):
         annList_new += [ann_org]
 
     return {"annList": annList_new}
-    # # ious = maskUtils.iou(dt, dt, 0)
-    # return {"annList": annList}
-
-    # proposals = batch["proposals"]
-    # new_annList = []
-
-    # if "maskVoid" in batch and batch["maskVoid"] is not None:
-    #     maskVoid = batch["maskVoid"]
-    # else:
-    #     maskVoid = None
-
-    # dt_list = []
-    # for i, dt in enumerate(copy.deepcopy(annList)):
-    #     # key = (dt['image_id'], dt['category_id'])
-
-    #     bb = dt["bbox"]
-    #     dt['area'] = bb[2]*bb[3]
-
-    #     dt["id"] = i + 1
-    #     dt['iscrowd'] = 0
-    #     dt_list += [dt]
-    # #     dt_dict[key] += [dt]
-    # import ipdb; ipdb.set_trace()  # breakpoint 436e4cb4 //
-    # for ann_prop in proposals:
-    #     if ann_prop["score"] < 0.5:
-    #         continue
-
-    #     for ann in annList:
-    #         binmask = ann2mask(ann)["mask"]
-    #         best_dice = 0.
-    #         best_mask = None
-    #     for ann_prop in proposals:
-    #         import ipdb; ipdb.set_trace()  # breakpoint 81db1ecd //
-
-    #         if ann["score"] < 0.5:
-    #             continue
-    #         score = dice(ann["mask"], binmask)
-    #         if score > best_dice:
-    #             best_dice = score
-    #             best_mask = ann["mask"]
-    #             # prop_score = ann["score"]
-
-    #     if best_mask is None:
-    #         best_mask = binmask
-
-    #     if maskVoid is not None:
-    #         binmask = best_mask * (ut.t2n(maskVoid).squeeze())
-    #     else:
-    #         binmask = best_mask
-
-    #     seg = maskUtils.encode(np.asfortranarray(ut.t2n(binmask)).astype("uint8"))
-    #     seg["counts"] = seg["counts"].decode("utf-8")
-    #     ann["score"] = best_dice
-    #     ann["segmentation"] = seg
-
-    #     new_annList += [ann]
-
 
 @torch.no_grad()
 def annList2best_objectness(annList, points,
@@ -354,7 +297,7 @@ def annList2targets(annList):
 
     if "segmentation" in annList[0]:
         masks = [obj["segmentation"] for obj in annList]
-        # from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
+        from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
         masks = SegmentationMask(masks, img_size, mode="mask")
 
         target.add_field("masks", masks)
@@ -797,89 +740,89 @@ class Polygons(object):
         s += "mode={})".format(self.mode)
         return s
 
-
-class SegmentationMask(object):
-    """
-    This class stores the segmentations for all objects in the image
-    """
-
-    def __init__(self, segms, size, mode=None):
-        """
-        Arguments:
-            segms: three types
-                (1) polygons: a list of list of lists of numbers. The first
-                level of the list correspond to individual instances,
-                the second level to all the polygons that compose the
-                object, and the third level to the polygon coordinates.
-                (2) rles: COCO's run length encoding format, uncompressed or compressed
-                (3) binary masks
-            size: (width, height)
-            mode: 'polygon', 'mask'. if mode is 'mask', convert mask of any format to binary mask
-        """
-        assert isinstance(segms, list)
-        if len(segms) == 0:
-            self.masks = []
-            mode = 'mask'
-        else:
-            if type(segms[0]) != list:
-                mode = 'mask'
-
-            if mode == 'mask':
-                self.masks = [Mask(m, size, mode) for m in segms]
-            else:  # polygons
-                self.masks = [Polygons(p, size, mode) for p in segms]
-        self.size = size
-        self.mode = mode
-
-    def transpose(self, method):
-        if method not in (FLIP_LEFT_RIGHT, FLIP_TOP_BOTTOM):
-            raise NotImplementedError(
-                "Only FLIP_LEFT_RIGHT and FLIP_TOP_BOTTOM implemented")
-
-        flipped = []
-        for mask in self.masks:
-            flipped.append(mask.transpose(method))
-        return SegmentationMask(flipped, size=self.size, mode=self.mode)
-
-    def crop(self, box):
-        w, h = box[2] - box[0], box[3] - box[1]
-        cropped = []
-        for mask in self.masks:
-            cropped.append(mask.crop(box))
-        return SegmentationMask(cropped, size=(w, h), mode=self.mode)
-
-    def resize(self, size, *args, **kwargs):
-        scaled = []
-        for mask in self.masks:
-            scaled.append(mask.resize(size, *args, **kwargs))
-        return SegmentationMask(scaled, size=size, mode=self.mode)
-
-    def to(self, *args, **kwargs):
-        return self
-
-    def __getitem__(self, item):
-        if isinstance(item, (int, slice)):
-            selected_masks = [self.masks[item]]
-        else:
-            # advanced indexing on a single dimension
-            selected_masks = []
-            if isinstance(item, torch.Tensor) and item.dtype == torch.uint8:
-                item = item.nonzero()
-                item = item.squeeze(1) if item.numel() > 0 else item
-                item = item.tolist()
-            for i in item:
-                selected_masks.append(self.masks[i])
-        return SegmentationMask(selected_masks, size=self.size, mode=self.mode)
-
-    def __iter__(self):
-        return iter(self.masks)
-
-    def __repr__(self):
-        s = self.__class__.__name__ + "("
-        s += "num_instances={}, ".format(len(self.masks))
-        s += "image_width={}, ".format(self.size[0])
-        s += "image_height={})".format(self.size[1])
-        return s
+#
+# class SegmentationMask(object):
+#     """
+#     This class stores the segmentations for all objects in the image
+#     """
+#
+#     def __init__(self, segms, size, mode=None):
+#         """
+#         Arguments:
+#             segms: three types
+#                 (1) polygons: a list of list of lists of numbers. The first
+#                 level of the list correspond to individual instances,
+#                 the second level to all the polygons that compose the
+#                 object, and the third level to the polygon coordinates.
+#                 (2) rles: COCO's run length encoding format, uncompressed or compressed
+#                 (3) binary masks
+#             size: (width, height)
+#             mode: 'polygon', 'mask'. if mode is 'mask', convert mask of any format to binary mask
+#         """
+#         assert isinstance(segms, list)
+#         if len(segms) == 0:
+#             self.masks = []
+#             mode = 'mask'
+#         else:
+#             if type(segms[0]) != list:
+#                 mode = 'mask'
+#
+#             if mode == 'mask':
+#                 self.masks = [Mask(m, size, mode) for m in segms]
+#             else:  # polygons
+#                 self.masks = [Polygons(p, size, mode) for p in segms]
+#         self.size = size
+#         self.mode = mode
+#
+#     def transpose(self, method):
+#         if method not in (FLIP_LEFT_RIGHT, FLIP_TOP_BOTTOM):
+#             raise NotImplementedError(
+#                 "Only FLIP_LEFT_RIGHT and FLIP_TOP_BOTTOM implemented")
+#
+#         flipped = []
+#         for mask in self.masks:
+#             flipped.append(mask.transpose(method))
+#         return SegmentationMask(flipped, size=self.size, mode=self.mode)
+#
+#     def crop(self, box):
+#         w, h = box[2] - box[0], box[3] - box[1]
+#         cropped = []
+#         for mask in self.masks:
+#             cropped.append(mask.crop(box))
+#         return SegmentationMask(cropped, size=(w, h), mode=self.mode)
+#
+#     def resize(self, size, *args, **kwargs):
+#         scaled = []
+#         for mask in self.masks:
+#             scaled.append(mask.resize(size, *args, **kwargs))
+#         return SegmentationMask(scaled, size=size, mode=self.mode)
+#
+#     def to(self, *args, **kwargs):
+#         return self
+#
+#     def __getitem__(self, item):
+#         if isinstance(item, (int, slice)):
+#             selected_masks = [self.masks[item]]
+#         else:
+#             # advanced indexing on a single dimension
+#             selected_masks = []
+#             if isinstance(item, torch.Tensor) and item.dtype == torch.uint8:
+#                 item = item.nonzero()
+#                 item = item.squeeze(1) if item.numel() > 0 else item
+#                 item = item.tolist()
+#             for i in item:
+#                 selected_masks.append(self.masks[i])
+#         return SegmentationMask(selected_masks, size=self.size, mode=self.mode)
+#
+#     def __iter__(self):
+#         return iter(self.masks)
+#
+#     def __repr__(self):
+#         s = self.__class__.__name__ + "("
+#         s += "num_instances={}, ".format(len(self.masks))
+#         s += "image_width={}, ".format(self.size[0])
+#         s += "image_height={})".format(self.size[1])
+#         return s
 
 
 def annList2maskList(annList, box=False, color=False):
