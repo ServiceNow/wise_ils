@@ -125,7 +125,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-datasets/prm_point_dict.json
-datasets/proposal_dict.json
-train.py
