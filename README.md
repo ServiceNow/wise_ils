@@ -45,6 +45,15 @@ Run a mask rcnn on PASCAL 2012 with the following command:
 python train.py
 ```
 
+## Class-agnostic proposals
+
+Proposals can be obtained from
+- deepmask: https://github.com/facebookresearch/deepmask
+- MCG:https://github.com/jponttuset/mcg
+- COB: http://www.vision.ee.ethz.ch/~cvlsegmentation/cob/code.html
+
+They all have the same supervision which is class-agnostic mask labels from a possibly different training set. For unsupervised proposal-based method, use selective search.
+
 ## Citation 
 If you find the code useful for your research, please cite:
 
