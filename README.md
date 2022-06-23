@@ -1,3 +1,5 @@
+*ServiceNow completed its acquisition of Element AI on January 8, 2021. All references to Element AI in the materials that are part of this project should refer to ServiceNow.*
+
 # WISE - BMVC 2019
 ## Where are the Masks: Instance Segmentation with Image-level Supervision
 [[Paper]](https://arxiv.org/abs/1907.01430)
